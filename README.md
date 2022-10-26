@@ -63,7 +63,11 @@
 - ローディングインジゲータの表示
   - Suspense をラップするようなことをしなくても、 `app/loading.tsx` を追加することで実装できる
     - [該当ソース](./app/loading.tsx)
-  - おそらく、13 バージョンからは **`app/loading.tsx` がローディングインジゲータとしてユニークな役割をする**と思われる
+    - ![loading indigator](https://user-images.githubusercontent.com/26356552/198042941-6faa4560-c041-4628-931b-82b1811b2655.gif)
+
+  - おそらく、13 バージョンからは **`app/loading.tsx` がローディングインジ
+
+ゲータとしてユニークな役割をする**と思われる
   - おそらく、next.js 13 の `app` ディレクトリと react の最新バージョンの `use` を組み合わせることで、自動的にデータ取得中は `app/loading.tsx` を参照するようにしてくれる
 
 ### ダイナミックルート
@@ -80,7 +84,10 @@
   - url のパス名をディレクトリ配下にダイナミックルートでディレクトリがあったとしても、**メインコンテンツとしてはダイナミックルートのページを表示し、url のパス名をディレクトリで共通して見せたい部分は見せられる**
     - `posts` 配下の url パスで共通で見せたい部分は `app/posts/layout.tsx` で表示される
       - `posts` にアクセスしたら、 `posts` 専用で見せたいコンテンツは `app/posts/page.tsx` で見せられる
+        - ![posts_page_inside_posts_layout](https://user-images.githubusercontent.com/26356552/198044251-99a3a060-3791-458a-9ed5-3fb93c8f9799.png)
       - `posts/[id]` にアクセスしたら、 ダイナミックルートで見せたいコンテンツを `app/posts/[id]/page.tsx` で見せられる
+        - ![posts_[id]_page_inside_posts_layout](https://user-images.githubusercontent.com/26356552/198044414-4e1ea369-afbf-449f-8f26-eb4a7f705f26.png)
+
 
 ### 自作コンポーネント参照
 

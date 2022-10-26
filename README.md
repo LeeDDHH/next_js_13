@@ -1,34 +1,94 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js 13
 
-## Getting Started
+- [13 バージョンリリース](https://nextjs.org/blog/next-13)にともなって、 `create-next-app@latest --ts` のあとに[app/ Directory (beta)](https://nextjs.org/blog/next-13#app-directory-beta)を試す
 
-First, run the development server:
+## 動作環境
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+|            |         |
+| :--------: | :-----: |
+|  Node.js   | 18.12.0 |
+|    npm     | 8.19.2  |
+|    next    | 13.0.0  |
+|   react    | 18.2.0  |
+| react-dom  | 18.2.0  |
+| typescript |  4.8.4  |
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 確認したこと
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+- プロジェクト生成後、素の状態で動作確認 OK
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+### ディレクトリ構成
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+- `app` ディレクトリに `page.tsx` を追加することで、 `pages/index.tsx` と同じ役割をする
 
-## Learn More
+  - ただ、 `next.config.js` に `{experimental:{appDir: true}}` 設定を追加する必要がある
+  - 追加したら、以下の修正がかかる
 
-To learn more about Next.js, take a look at the following resources:
+    - `app` 配下に `layout.tsx` が追加される
+      - `RootLayout` という名前のコンポーネントが生成される
+      - `app.tsx` や `_document.tsx` の役割をする
+    - `tsconfig.json` に項目が追加される
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+      ```
+        - include was updated to add '.next/types/**/*.ts'
+        - plugins was updated to add { name: 'next' }
+      ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+- `app` ディレクトリと `pages` ディレクトリは共存できない
+  - `.notUse` ディレクトリを設け、 `pages` を移す
 
-## Deploy on Vercel
+### ページ表示
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `app/page.tsx` 内で `app/layout.tsx` をラップしなくても動作する
+  - おそらく、13 バージョンからは **`page.tsx` と `layout.tsx` がディレクトリ内でユニークな役割をする**と思われる
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### ルーティング
+
+- ルーティングに関する変更
+  - url のパスはディレクトリ名で区切る
+    - **url のパス名をディレクトリ名にすることで統一している**
+  - **url のパスとなるディレクトリには `page.tsx` を含める必要がある**
+- url のパス名をディレクトリの `page.tsx` から外部データを取得するコードを書くと想定する
+  - next.js 13 より前は `getServerSideProps` とか `getStaticProps` を使うことで外部データを取得できた
+  - しかし、**next.js 13 で最新の react を使う場合、react の `use` 関数を使うことで、より簡単に外部データの取得ができる**
+    - [該当ソース](./app/posts/page.tsx)
+    - [最速攻略！React の `use` RFC](https://zenn.dev/uhyo/articles/react-use-rfc)
+  - また、`use` でデータを取得した場合、 `console.log` を使ってログを出してもブラウザ側ではログの確認ができない
+    - サーバー（開発時はターミナル）では確認できる
+    - 理由は、 **`app` 配下のコンポーネントはデフォルトでサーバーコンポーネントとして動く**
+    - なので、 `console.log` を書く場合、サーバー（開発時はターミナル）で確認する必要がある
+
+### ローディングインジゲータ
+
+- ローディングインジゲータの表示
+  - Suspense をラップするようなことをしなくても、 `app/loading.tsx` を追加することで実装できる
+    - [該当ソース](./app/loading.tsx)
+  - おそらく、13 バージョンからは **`app/loading.tsx` がローディングインジゲータとしてユニークな役割をする**と思われる
+  - おそらく、next.js 13 の `app` ディレクトリと react の最新バージョンの `use` を組み合わせることで、自動的にデータ取得中は `app/loading.tsx` を参照するようにしてくれる
+
+### ダイナミックルート
+
+- ダイナミックルート
+  - ダイナミックルートとして参照するキー名をしたディレクトリを生成する
+    - ex) `app/posts/[id]`
+  - キー名のディレクトリ内には `page.tsx` を追加する
+
+### ルーティング配下のダイナミックルート
+
+- url のパス名をディレクトリ配下にも `layout.tsx` を追加できる
+  - 表示したいメインコンテンツは `page.tsx` に表示して、ページで共通する部分は `layout.tsx` に集約することができる
+  - url のパス名をディレクトリ配下にダイナミックルートでディレクトリがあったとしても、**メインコンテンツとしてはダイナミックルートのページを表示し、url のパス名をディレクトリで共通して見せたい部分は見せられる**
+    - `posts` 配下の url パスで共通で見せたい部分は `app/posts/layout.tsx` で表示される
+      - `posts` にアクセスしたら、 `posts` 専用で見せたいコンテンツは `app/posts/page.tsx` で見せられる
+      - `posts/[id]` にアクセスしたら、 ダイナミックルートで見せたいコンテンツを `app/posts/[id]/page.tsx` で見せられる
+
+### 自作コンポーネント参照
+
+- コンポーネントとして分離したパーツは `app` 配下においても、 `app` の外からでも参照できる
+  - `app/navBar.tsx` と `components/navBar.tsx` で動作の差はなかった
+
+## 参考
+
+- [Next.js 13 - How to use App folder & Layouts - YouTube](https://www.youtube.com/watch?v=xXwxEudjiAY)
+- [Blog - Next.js 13 | Next.js](https://nextjs.org/blog/next-13#app-directory-beta)
+- [最速攻略！React の `use` RFC](https://zenn.dev/uhyo/articles/react-use-rfc)
